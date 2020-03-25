@@ -18,6 +18,8 @@
 
 #define E820_MAX_ENTRIES	32U
 
+#define E820_INFO_GPA_OVMF_SOS  0x1000ULL
+
 /** Defines a single entry in an E820 memory map. */
 struct e820_entry {
    /** The base address of the memory range. */
@@ -27,6 +29,16 @@ struct e820_entry {
    /** The type of memory region. */
 	uint32_t type;
 } __packed;
+
+/** Defines the E820 info struct*/
+struct e820_info{
+		/** The signature. Should be "820"*/ 
+		char signature[4];
+		/** The number of enties*/
+		uint32_t nentries;
+		/** The array of entries. each entry contains a mapping*/
+		struct e820_entry map[];
+	} __attribute__((packed));
 
 struct mem_range {
 	uint64_t mem_bottom;

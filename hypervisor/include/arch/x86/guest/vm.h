@@ -267,6 +267,8 @@ bool is_highest_severity_vm(const struct acrn_vm *vm);
 bool vm_hide_mtrr(const struct acrn_vm *vm);
 void update_vm_vlapic_state(struct acrn_vm *vm);
 enum vm_vlapic_state check_vm_vlapic_state(const struct acrn_vm *vm);
+
+void filter_mem_from_sos_e820(struct acrn_vm *vm, uint64_t start_pa, uint64_t end_pa);
 #endif /* !ASSEMBLER */
 
 #endif /* VM_H_ */

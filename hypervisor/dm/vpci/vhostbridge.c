@@ -47,8 +47,8 @@
 static void init_vhostbridge(struct pci_vdev *vdev)
 {
 	/* PCI config space */
-	pci_vdev_write_vcfg(vdev, PCIR_VENDOR, 2U, 0x8086U);
-	pci_vdev_write_vcfg(vdev, PCIR_DEVICE, 2U, 0x5af0U);
+	pci_vdev_write_vcfg(vdev, PCIR_VENDOR, 2u, (uint16_t)PCIV_VENDOR_ID);
+	pci_vdev_write_vcfg(vdev, PCIR_DEVICE, 2u, (uint16_t)PCID_HOSTBRIDGE_ID);
 
 	pci_vdev_write_vcfg(vdev, PCIR_REVID, 1U, 0xbU);
 

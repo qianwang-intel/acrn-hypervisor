@@ -364,3 +364,19 @@ config IOMMU_ENFORCE_SNP
 	help
 	  GPU IOMMU doesn't support snoop control capability,
 	  To enable gvt-d,disable IOMMU snoop control by default.
+
+config OVMF_FOR_ACRN_SOS
+	bool "Enable support to directly boot ACRN SOS using OVMF"
+	depends on !RELOC && MULTIBOOT2
+	default n
+	help
+		Enable support to directly boot ACRN SOS using OVMF. 
+		A modified version of OVMF (https://github.com/projectacrn/acrn-edk2 branch:ovmf-acrn) as well as a bootloader supporting multiboot2 protocol (e.g. grub) will be needed.
+
+config OVMF_IMG_SIZE_SOS
+	hex "The size of the OVMF image used to boot SOS"
+	depends on OVMF_FOR_ACRN_SOS
+	range 0x00100000 0x01000000
+	default 0x00200000
+	help
+		The size of the OVMF image used to boot SOS. Should be in accordance with your specified OVMF image.

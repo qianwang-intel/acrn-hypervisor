@@ -24,9 +24,17 @@ struct acrn_vm_config vm_configs[CONFIG_MAX_VM_NUM] = {
 		},
 		.os_config = {
 			.name = "ACRN Service OS",
+#if !defined(CONFIG_OVMF_FOR_ACRN_SOS)
 			.kernel_type = KERNEL_BZIMAGE,
 			.kernel_mod_tag = "Linux_bzImage",
-			.bootargs = SOS_VM_BOOTARGS
+			.bootargs = SOS_VM_BOOTARGS,
+#else
+			.kernel_type = KERNEL_OVMF,
+			.kernel_mod_tag = "OVMF",
+			.bootargs = "",
+			.kernel_load_addr = 0x100000000ULL-CONFIG_OVMF_IMG_SIZE_SOS, 
+			.kernel_entry_addr = 0xFFF0U, // real mode
+#endif
 		},
 		.vuart[0] = {
 			.type = VUART_LEGACY_PIO,

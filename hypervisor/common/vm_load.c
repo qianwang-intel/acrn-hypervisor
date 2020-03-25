@@ -177,6 +177,39 @@ static void prepare_loading_rawimage(struct acrn_vm *vm)
 	sw_kernel->kernel_entry_addr = (void *)vm_config->os_config.kernel_entry_addr;
 }
 
+/*
+ * Copy the e820_info of the VM to a pre-defined GPA
+ * Currently only needed by OVMF 
+ */
+static void prepare_e820_info(struct acrn_vm *vm)
+{
+	uint64_t e820_info_gpa; 
+	struct e820_info* e820_info_hva;
+
+	/* Currently this's only needed by OVMF.  Assert(false) for other situations */
+	if( is_sos_vm(vm) && vm->sw.kernel_type == KERNEL_OVMF )
+		e820_info_gpa = E820_INFO_GPA_OVMF_SOS;
+	else 
+		return;
+	
+	/* Fill the signature and copy entries to the dest GPA*/ 
+	e820_info_hva = (struct e820_info*)gpa2hva(vm, e820_info_gpa);
+	stac();
+	strncpy_s(e820_info_hva->signature, 4, "820", 4);
+	e820_info_hva->nentries = vm->e820_entry_num;
+	memcpy_s(e820_info_hva->map, vm->e820_entry_num*sizeof(struct e820_entry),
+		vm->e820_entries, vm->e820_entry_num*sizeof(struct e820_entry));
+	clac();
+}
+
+static void remap_and_protect_image(struct acrn_vm* vm, uint64_t hpa, uint64_t gpa, uint64_t size)
+{
+	ept_del_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp, gpa, size);
+	ept_del_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp, hpa, size);
+	ept_add_mr(vm, (uint64_t *)vm->arch_vm.nworld_eptp, hpa, gpa, size, (EPT_RWX | EPT_WB));
+	filter_mem_from_sos_e820(vm, hpa, hpa + size);
+}
+
 /**
  * @pre vm != NULL
  */
@@ -191,16 +224,22 @@ int32_t direct_boot_sw_loader(struct acrn_vm *vm)
 
 	pr_dbg("Loading guest to run-time location");
 
-	/*
-	 * TODO:
-	 *    - We need to initialize the guest bsp registers according to
-	 *      guest boot mode (real mode vs protect mode)
-	 */
-	init_vcpu_protect_mode_regs(vcpu, get_guest_gdt_base_gpa(vcpu->vm));
+	if(is_sos_vm(vm) && vm->sw.kernel_type == KERNEL_OVMF ) {
+		/*
+		* For  OVMF on SOS, we must remap the memory containing OVMF image to dest GPA high-mem in EPT,
+		* and filter it from SOS E820 to protect it,
+		* then we reset the vcpu to real mode.
+		*/
+		remap_and_protect_image(vm, hva2hpa(sw_kernel->kernel_src_addr), (uint64_t)sw_kernel->kernel_load_addr, sw_kernel->kernel_size);
+		reset_vcpu_regs(vcpu);
+		
+	} else {
+		init_vcpu_protect_mode_regs(vcpu, get_guest_gdt_base_gpa(vcpu->vm));
 
-	/* Copy the guest kernel image to its run-time location */
-	(void)copy_to_gpa(vm, sw_kernel->kernel_src_addr,
-		(uint64_t)sw_kernel->kernel_load_addr, sw_kernel->kernel_size);
+		/* Copy the guest kernel image to its run-time location */
+		(void)copy_to_gpa(vm, sw_kernel->kernel_src_addr,
+			(uint64_t)sw_kernel->kernel_load_addr, sw_kernel->kernel_size);
+	}
 
 	/* Check if a RAM disk is present */
 	if (ramdisk_info->size != 0U) {
@@ -221,6 +260,10 @@ int32_t direct_boot_sw_loader(struct acrn_vm *vm)
 		break;
 	case KERNEL_ZEPHYR:
 		prepare_loading_rawimage(vm);
+		break;
+	case KERNEL_OVMF:
+		prepare_loading_rawimage(vm);
+		prepare_e820_info(vm);
 		break;
 	default:
 		pr_err("%s, Loading VM SW failed", __func__);

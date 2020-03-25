@@ -141,6 +141,9 @@
 /* PCI device class */
 #define PCIC_BRIDGE           0x06U
 #define PCIS_BRIDGE_HOST      0x00U
+#define PCID_HOSTBRIDGE_ID 0x5af0U
+#define PCIV_VENDOR_ID 0x8086U
+
 
 /* PCI device subclass */
 #define PCIS_BRIDGE_PCI       0x04U

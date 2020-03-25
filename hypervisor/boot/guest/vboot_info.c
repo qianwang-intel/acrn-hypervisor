@@ -116,6 +116,7 @@ static void *get_kernel_load_addr(struct acrn_vm *vm)
 		load_addr = (void *)zeropage;
 		break;
 	case KERNEL_ZEPHYR:
+	case KERNEL_OVMF:
 		load_addr = (void *)vm_config->os_config.kernel_load_addr;
 		break;
 	default:
@@ -321,6 +322,8 @@ int32_t init_vm_boot_info(struct acrn_vm *vm)
 	} else {
 		vm_sw_loader = direct_boot_sw_loader;
 		ret = init_general_vm_boot_info(vm);
+		if(is_sos_vm(vm) && (vm->sw.kernel_type == KERNEL_OVMF))
+			spurious_handler = depri_boot_spurious_handler;
 	}
 
 	return ret;

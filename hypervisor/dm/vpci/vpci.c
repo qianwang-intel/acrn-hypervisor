@@ -576,9 +576,11 @@ static int32_t vpci_write_cfg(struct acrn_vpci *vpci, union pci_bdf bdf,
 	if (vdev != NULL) {
 		ret = vdev->vdev_ops->write_vdev_cfg(vdev, offset, bytes, val);
 	} else {
+		//to noisy when using OVMF as SOS, so commented
 		if (!is_postlaunched_vm(vpci->vm)) {
-			pr_acrnlog("%s %x:%x.%x not found! off: 0x%x, val: 0x%x\n", __func__,
-				bdf.bits.b, bdf.bits.d, bdf.bits.f, offset, val);
+			//pr_acrnlog("%s %x:%x.%x not found! off: 0x%x, val: 0x%x\n", __func__,
+			//	bdf.bits.b, bdf.bits.d, bdf.bits.f, offset, val);
+			;
 		} else {
 			ret = -ENODEV;
 		}
